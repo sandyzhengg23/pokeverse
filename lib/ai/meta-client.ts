@@ -80,8 +80,8 @@ async function respond(
 }
 
 /** Send a plain text prompt to Muse Spark and return its text answer. */
-export function generateText(prompt: string): Promise<MetaTextResult> {
-  return respond(prompt);
+export function generateText(prompt: string, options?: RequestOptions): Promise<MetaTextResult> {
+  return respond(prompt, options);
 }
 
 /**

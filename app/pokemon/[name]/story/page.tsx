@@ -68,6 +68,11 @@ async function Story({ params }: { params: PageProps<"/pokemon/[name]/story">["p
               <PokemonTypeBadge key={t} type={t} />
             ))}
           </div>
+          {episodes.length > 0 && (
+            <Link href={`/journey?pokemon=${pokemon.speciesId}`} className="btn-primary mt-4">
+              🎬 Build a Story Journey
+            </Link>
+          )}
         </div>
       </header>
 

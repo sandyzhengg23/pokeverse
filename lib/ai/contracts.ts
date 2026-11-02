@@ -36,20 +36,70 @@ export interface CardIdentifier {
 
 /* 2. Spoiler-aware viewing journeys (/journey) ---------------------------- */
 
+export const JOURNEY_BUDGETS = [30, 60, 120] as const;
+export type JourneyBudget = (typeof JOURNEY_BUDGETS)[number];
+
+export const JOURNEY_INTERESTS = [
+  "character_development",
+  "battles",
+  "friendships",
+  "evolutions",
+  "introductions",
+] as const;
+export type JourneyInterest = (typeof JOURNEY_INTERESTS)[number];
+
 export interface JourneyRequest {
-  /** PokéAPI slugs from the user's collection. */
-  collection: string[];
-  interests?: string[];
+  /** National Dex species ids that have curated anime episodes (verified species ids, never card text). */
+  pokemonIds: number[];
+  budgetMinutes: JourneyBudget;
+  /** Plot outcomes above this level are never sent to the model or the browser. */
   maxSpoilerLevel: SpoilerLevel;
+  interests: JourneyInterest[];
 }
 
 export interface JourneyStep {
+  /** 1-based position in watching (broadcast) order. */
+  order: number;
+  /**
+   * The episode as stored in our dataset, shown from the point of view of
+   * `featuredPokemonIds[0]`. Outcomes above the spoiler setting are redacted
+   * (empty text) before leaving the server. Every title, number and source
+   * comes from here, never from model output.
+   */
+  episode: AnimeEpisodeAppearance;
+  /** Selected Pokémon that appear in this episode (each episode is listed once). */
+  featuredPokemonIds: number[];
+  /** Why this episode was chosen. Spoiler-checked model text, or the dataset's own premise text. */
+  reason: string;
+  reasonSource: "ai" | "dataset";
+  /** Locally derived (dataset-backed) link to the previous step, or null. */
+  linkToPrevious: string | null;
+  /** PLANNING ESTIMATE only; we have no verified runtimes. */
+  estimatedMinutes: number;
+}
+
+/** A relationship between selected Pokémon that the dataset explicitly supports. */
+export interface JourneyConnection {
+  pokemonIds: [number, number];
+  episodeIds: string[];
+  text: string;
+}
+
+export interface JourneyPlan {
   title: string;
-  /** Explanation grounded ONLY in the cited episodes and PokéAPI facts. */
-  rationale: string;
-  episodes: AnimeEpisodeAppearance[];
+  introduction: string;
+  /** False when the model's text failed validation and a deterministic fallback was used. */
+  titleSource: "ai" | "dataset";
+  introductionSource: "ai" | "dataset";
+  request: JourneyRequest;
+  steps: JourneyStep[];
+  connections: JourneyConnection[];
+  estimate: { minutesPerEpisode: number; totalMinutes: number; note: string };
+  /** Plain-language notes: shorter journey, uncovered Pokémon, rejected model picks, fallbacks. */
+  notices: string[];
+  model: string;
 }
 
 export interface JourneyPlanner {
-  plan(request: JourneyRequest): Promise<JourneyStep[]>;
+  plan(request: JourneyRequest): Promise<JourneyPlan>;
 }

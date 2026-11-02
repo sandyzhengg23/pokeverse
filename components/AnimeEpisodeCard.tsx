@@ -48,7 +48,9 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
       <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
         <span className="rounded-full bg-theme-soft px-3 py-1">{ROLE_LABEL[episode.role]}</span>
         <span className="rounded-full bg-theme-soft px-3 py-1">{SIGNIFICANCE_LABEL[episode.significance]}</span>
-        <span className="rounded-full bg-white/80 px-3 py-1">{SPOILER_LABEL[outcome?.level ?? "none"]}</span>
+        <span className="rounded-full bg-white/80 px-3 py-1">
+          {hiddenOutcome ? `🔒 ${outcome.level === "major" ? "Major" : "Mild"} spoiler hidden` : SPOILER_LABEL[outcome?.level ?? "none"]}
+        </span>
       </div>
 
       <p className="mt-3 font-bold">Why it matters</p>
@@ -74,7 +76,7 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
       )}
       {hiddenOutcome && (
         <p className="mt-3 text-sm text-ink-muted">
-          🔒 {outcome.level === "major" ? "A major" : "A mild"} spoiler is hidden. Change the spoiler setting on the story page to reveal it.
+          🔒 What happens to this Pokémon in this episode is hidden by your spoiler setting.
         </p>
       )}
 

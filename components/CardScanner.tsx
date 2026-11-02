@@ -9,6 +9,7 @@ import { PokemonTypeBadge } from "@/components/PokemonTypeBadge";
 import { StateMessage } from "@/components/StateMessage";
 import { TypeTheme } from "@/components/TypeTheme";
 import { MAX_UPLOAD_BYTES, type ScanResult } from "@/lib/ai/card-scan";
+import { hasAnimeAppearances } from "@/lib/anime/queries";
 import { formatPokemonId } from "@/lib/pokeapi/format";
 import type { Pokemon } from "@/lib/pokeapi/types";
 
@@ -249,6 +250,11 @@ function ResultPanel({
             )}
             <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
               <Link href={`/pokemon/${pokemon.name}`} className="btn-primary">View {pokemon.displayName}’s profile</Link>
+              {hasAnimeAppearances(pokemon.speciesId) && (
+                <Link href={`/journey?pokemon=${pokemon.speciesId}`} className="btn-primary">
+                  🎬 Build a Story Journey
+                </Link>
+              )}
               <button type="button" className="btn-secondary" onClick={() => setCorrecting((v) => !v)}>
                 Not right?
               </button>
@@ -266,6 +272,7 @@ function ResultPanel({
             pokemonSlug={pokemon.name}
             displayName={pokemon.displayName}
             limit={2}
+            showJourneyLink={false}
           />
         </div>
       )}

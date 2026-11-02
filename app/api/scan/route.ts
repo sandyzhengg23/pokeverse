@@ -1,6 +1,7 @@
 import { MAX_UPLOAD_BYTES, sniffImageType } from "@/lib/ai/card-scan";
 import { scanCard } from "@/lib/ai/card-scanner";
 import { MetaAIError } from "@/lib/ai/meta-client";
+import { limitAiRequest, tooManyRequests } from "@/lib/rate-limit";
 
 /**
  * POST /api/scan — multipart form with one `image` field.
@@ -12,6 +13,10 @@ export async function POST(request: Request) {
   if (declared > MAX_UPLOAD_BYTES + 64 * 1024) {
     return fail("That image is too large. Please use one under 5 MB.", 413);
   }
+
+  // Rate-limit before buffering or parsing the upload.
+  const limit = await limitAiRequest(request, { name: "scan", max: 10, windowSeconds: 600 });
+  if (!limit.ok) return tooManyRequests(limit, "You’ve scanned a lot of cards. Please wait a few minutes and try again.");
 
   let file: FormDataEntryValue | null;
   try {

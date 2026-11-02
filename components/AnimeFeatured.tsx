@@ -17,6 +17,8 @@ interface AnimeFeaturedProps {
    * default to "none"; the story page passes the viewer's choice.
    */
   allowed?: SpoilerLevel;
+  /** Show "Build a Story Journey" next to the story link. Needs `showLink`. */
+  showJourneyLink?: boolean;
   /** Pre-selected episodes; defaults to the featured episodes for `pokemonId`. */
   episodes?: AnimeEpisodeAppearance[];
 }
@@ -32,6 +34,7 @@ export function AnimeFeatured({
   limit = 3,
   showLink = true,
   allowed = "none",
+  showJourneyLink = true,
   episodes,
 }: AnimeFeaturedProps) {
   const featured = episodes ?? getFeaturedEpisodes(pokemonId, limit);
@@ -60,9 +63,16 @@ export function AnimeFeatured({
         {showLink && " Plot outcomes are hidden here; open the story page to choose your spoiler setting."}
       </p>
       {showLink && (
-        <Link href={`/pokemon/${pokemonSlug}/story`} className="btn-primary">
-          Explore {displayName}’s story ({total} episode{total === 1 ? "" : "s"}) →
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href={`/pokemon/${pokemonSlug}/story`} className="btn-primary">
+            Explore {displayName}’s story ({total} episode{total === 1 ? "" : "s"}) →
+          </Link>
+          {showJourneyLink && (
+            <Link href={`/journey?pokemon=${pokemonId}`} className="btn-secondary">
+              🎬 Build a Story Journey
+            </Link>
+          )}
+        </div>
       )}
     </div>
   );

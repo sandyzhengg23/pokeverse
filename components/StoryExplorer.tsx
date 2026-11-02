@@ -6,7 +6,7 @@ import { NUMBERING_NOTE } from "@/components/AnimeEpisodeCard";
 import { AnimeTimeline } from "@/components/AnimeTimeline";
 import type { AnimeEpisodeAppearance, SpoilerLevel } from "@/lib/anime/types";
 
-const LEVELS: { value: SpoilerLevel; label: string; hint: string }[] = [
+export const SPOILER_LEVELS: { value: SpoilerLevel; label: string; hint: string }[] = [
   { value: "none", label: "No spoilers", hint: "Premises only. How storylines turn out is hidden." },
   { value: "mild", label: "Mild spoilers", hint: "Premises plus small plot points. Major outcomes stay hidden." },
   { value: "major", label: "Everything", hint: "Every verified detail, including major outcomes." },
@@ -36,7 +36,7 @@ export function StoryExplorer({ pokemonId, pokemonSlug, displayName, featured, e
         <fieldset>
           <legend className="eyebrow mb-2">Spoiler setting</legend>
           <div className="flex flex-wrap gap-2">
-            {LEVELS.map((level) => (
+            {SPOILER_LEVELS.map((level) => (
               <label
                 key={level.value}
                 className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 ${
@@ -58,7 +58,7 @@ export function StoryExplorer({ pokemonId, pokemonSlug, displayName, featured, e
             ))}
           </div>
           <p className="mt-2 text-sm text-ink-muted" aria-live="polite">
-            {LEVELS.find((l) => l.value === allowed)?.hint}
+            {SPOILER_LEVELS.find((l) => l.value === allowed)?.hint}
             {hiddenCount > 0 && ` ${hiddenCount} spoiler${hiddenCount === 1 ? " is" : "s are"} hidden.`}
           </p>
         </fieldset>
