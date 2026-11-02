@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/explore", label: "Explore" },
@@ -30,7 +30,7 @@ function NavList({
               href={href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`block rounded-full px-4 py-2 text-sm font-bold transition duration-200 ${
+              className={`flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-bold transition duration-200 ${
                 active ? "bg-theme-ink text-white" : "hover:bg-theme-soft"
               }`}
             >
@@ -51,6 +51,20 @@ function ActiveNavList(props: { onNavigate?: () => void; className: string }) {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  // Escape closes the mobile menu and returns focus to its button.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
   // Fallback renders the same links without the active highlight, so the
   // static shell is never missing its navigation.
   const desktopClass = "hidden items-center gap-1 md:flex";
@@ -62,7 +76,7 @@ export function Navbar() {
         aria-label="Main"
         className="surface relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 sm:px-6"
       >
-        <Link href="/" onClick={close} className="flex items-center gap-2.5 text-xl font-black">
+        <Link href="/" onClick={close} className="flex min-h-11 items-center gap-2.5 text-xl font-black">
           <span
             aria-hidden
             className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-blush via-lavender to-sky text-base shadow-soft"
@@ -77,13 +91,14 @@ export function Navbar() {
         </Suspense>
 
         <button
+          ref={menuButton}
           type="button"
-          className="btn-secondary !min-h-10 !px-4 md:hidden"
+          className="btn-secondary !px-4 md:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? "Close" : "Menu"}
+          {open ? "Close menu" : "Menu"}
         </button>
 
         {open && (

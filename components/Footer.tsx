@@ -9,19 +9,24 @@ export function Footer() {
             <p className="text-lg font-black text-theme-ink">PokéVerse</p>
             <p>Every card has a story.</p>
           </div>
-          <ul className="flex flex-wrap gap-x-6 gap-y-2 font-bold text-theme-ink">
+          <ul className="flex flex-wrap gap-x-6 font-bold text-theme-ink">
             <li>
-              <Link href="/explore" className="hover:underline">
+              <Link href="/explore" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
                 Explore
               </Link>
             </li>
             <li>
-              <Link href="/collection" className="hover:underline">
+              <Link href="/scan" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+                Scan
+              </Link>
+            </li>
+            <li>
+              <Link href="/collection" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
                 Collection
               </Link>
             </li>
             <li>
-              <Link href="/journey" className="hover:underline">
+              <Link href="/journey" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
                 Journey
               </Link>
             </li>
@@ -38,6 +43,7 @@ export function Footer() {
             className="font-bold text-theme-ink underline underline-offset-4"
           >
             PokéAPI
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
           .
         </p>

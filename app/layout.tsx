@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
+import { ANNOUNCER_ID } from "@/components/Announce";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s · PokéVerse",
   },
   description:
-    "Discover the stories behind your Pokémon cards: explore Pokémon, evolutions and (soon) anime appearances and AI-guided viewing journeys.",
+    "Discover the stories behind your Pokémon cards: scan a card to find the verified anime episodes behind the Pokémon on it, and follow an AI-planned, spoiler-aware viewing journey.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="relative flex min-h-full flex-col">
         <a
           href="#main"
-          className="sr-only z-50 rounded-full bg-white px-4 py-2 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-50 rounded-full bg-white px-4 py-2 font-bold text-[#3f3358] focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Skip to content
         </a>
@@ -36,8 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="absolute bottom-0 left-1/3 size-72 rounded-full bg-theme-soft/60 blur-3xl transition-colors duration-700" />
         </div>
 
+        <div id={ANNOUNCER_ID} role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
+
         <Navbar />
-        <main id="main" className="flex-1">
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
         <Footer />

@@ -32,13 +32,14 @@ export function EvolutionTimeline({
                 <span className="relative block size-24">
                   <PokemonArtwork
                     src={member.artworkUrl}
-                    alt={`Official artwork of ${member.displayName}`}
+                    alt="" /* decorative: the link text names the Pokémon */
                     sizes="96px"
                   />
                 </span>
                 <span className="mt-2 font-extrabold">{member.displayName}</span>
                 {member.requirement && (
                   <span className="mt-1 text-xs font-bold text-ink-muted">
+                    <span className="sr-only">Evolves by: </span>
                     {member.requirement}
                   </span>
                 )}

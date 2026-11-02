@@ -6,6 +6,7 @@ import { searchPokemonForCorrection } from "@/app/scan/actions";
 import { AnimeFeatured } from "@/components/AnimeFeatured";
 import { PokemonArtwork } from "@/components/PokemonArtwork";
 import { PokemonTypeBadge } from "@/components/PokemonTypeBadge";
+import { SaveToCollectionButton } from "@/components/SaveToCollectionButton";
 import { StateMessage } from "@/components/StateMessage";
 import { TypeTheme } from "@/components/TypeTheme";
 import { MAX_UPLOAD_BYTES, type ScanResult } from "@/lib/ai/card-scan";
@@ -47,6 +48,7 @@ export function CardScanner() {
   const abortRef = useRef<AbortController | null>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const cameraButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
@@ -63,6 +65,8 @@ export function CardScanner() {
     setPreviewUrl(null);
     setResult(null);
     setCorrected(null);
+    // The "Start over"/"Cancel" button unmounts; keep keyboard focus somewhere sensible.
+    cameraButton.current?.focus();
   }
 
   async function handleFile(file: File | undefined) {
@@ -111,6 +115,18 @@ export function CardScanner() {
   const busy = phase === "preparing" || phase === "scanning";
   const pokemon = corrected ?? result?.pokemon ?? null;
 
+  // One persistent live region announces every state change (see also the error alert below).
+  const statusMessage =
+    phase === "preparing"
+      ? "Preparing your photo…"
+      : phase === "scanning"
+        ? "Reading your card with Muse Spark…"
+        : phase === "done" && result
+          ? pokemon
+            ? `Scan complete. ${corrected ? "You chose" : "Found"} ${pokemon.displayName}. Results are below.`
+            : "Scan complete, but we couldn’t identify the Pokémon. Options are below."
+          : "";
+
   return (
     <section className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
       {pokemon && <TypeTheme type={pokemon.types[0]} />}
@@ -134,12 +150,12 @@ export function CardScanner() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
-              alt="Your uploaded card"
+              alt="Preview of the Pokémon card photo you chose"
               className={`max-h-80 rounded-2xl object-contain shadow-soft ${busy ? "opacity-60" : ""}`}
             />
             {busy && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="size-10 animate-spin rounded-full border-4 border-theme-accent border-t-theme-ink" />
+                <span aria-hidden className="size-10 animate-spin rounded-full border-4 border-theme-accent border-t-theme-ink" />
               </div>
             )}
           </div>
@@ -148,20 +164,20 @@ export function CardScanner() {
         )}
 
         <p role="status" aria-live="polite" className="mt-4 min-h-6 font-bold">
-          {phase === "preparing" && "Preparing your photo…"}
-          {phase === "scanning" && "Reading your card with Muse Spark…"}
+          {phase === "preparing" || phase === "scanning" ? statusMessage : <span className="sr-only">{statusMessage}</span>}
         </p>
 
         <div className="mt-2 flex flex-wrap justify-center gap-3">
           {/* `capture` opens the camera on phones; the second input allows picking from the gallery/files. */}
-          <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden
+          <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden aria-label="Take a photo of a card" tabIndex={-1}
             onChange={(e) => { void handleFile(e.target.files?.[0]); e.target.value = ""; }} />
-          <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden
+          <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Choose a card image" tabIndex={-1}
             onChange={(e) => { void handleFile(e.target.files?.[0]); e.target.value = ""; }} />
-          <button type="button" className="btn-primary" disabled={busy} onClick={() => cameraInput.current?.click()}>
-            📷 Take a photo
+          {/* aria-disabled (not disabled) keeps keyboard focus on the button while a scan runs. */}
+          <button ref={cameraButton} type="button" className="btn-primary" aria-disabled={busy} onClick={() => { if (!busy) cameraInput.current?.click(); }}>
+            <span aria-hidden>📷</span> Take a photo
           </button>
-          <button type="button" className="btn-secondary" disabled={busy} onClick={() => fileInput.current?.click()}>
+          <button type="button" className="btn-secondary" aria-disabled={busy} onClick={() => { if (!busy) fileInput.current?.click(); }}>
             Choose an image
           </button>
           {phase !== "idle" && (
@@ -200,6 +216,12 @@ function ResultPanel({
   onCorrect: (p: Pokemon) => void;
 }) {
   const [correcting, setCorrecting] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Picking a Pokémon unmounts the search form; move focus to the new result instead of losing it.
+  useEffect(() => {
+    if (isCorrected) headingRef.current?.focus();
+  }, [isCorrected]);
 
   if (!pokemon && !correcting) {
     const title = !result.isPokemonCard ? "That doesn’t look like a Pokémon card" : "We couldn’t identify the Pokémon";
@@ -232,16 +254,16 @@ function ResultPanel({
       {pokemon && (
         <div className="surface p-6 sm:flex sm:items-center sm:gap-8">
           <div className="relative mx-auto aspect-square w-48 shrink-0 sm:mx-0">
-            <PokemonArtwork src={pokemon.artworkUrl} alt={pokemon.displayName} sizes="192px" priority />
+            <PokemonArtwork src={pokemon.artworkUrl} alt={`Official artwork of ${pokemon.displayName}`} sizes="192px" priority />
           </div>
           <div className="mt-4 text-center sm:mt-0 sm:text-left">
             <p className="eyebrow">{formatPokemonId(pokemon.id)}</p>
-            <h2 className="text-3xl font-black">{pokemon.displayName}</h2>
+            <h2 ref={headingRef} tabIndex={-1} className="text-3xl font-black focus:outline-none">{pokemon.displayName}</h2>
             <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
               {pokemon.types.map((t) => <PokemonTypeBadge key={t} type={t} />)}
             </div>
             <p className="mt-3 text-sm font-bold text-theme-ink">
-              ✓ {isCorrected ? "Chosen by you · data from PokéAPI" : "Species verified with PokéAPI"}
+              <span aria-hidden>✓ </span>{isCorrected ? "Chosen by you · data from PokéAPI" : "Species verified with PokéAPI"}
             </p>
             {!isCorrected && result.confidence !== "high" && (
               <p className="mt-1 text-sm text-ink-muted">
@@ -252,10 +274,17 @@ function ResultPanel({
               <Link href={`/pokemon/${pokemon.name}`} className="btn-primary">View {pokemon.displayName}’s profile</Link>
               {hasAnimeAppearances(pokemon.speciesId) && (
                 <Link href={`/journey?pokemon=${pokemon.speciesId}`} className="btn-primary">
-                  🎬 Build a Story Journey
+                  <span aria-hidden>🎬</span> Build a Story Journey
                 </Link>
               )}
-              <button type="button" className="btn-secondary" onClick={() => setCorrecting((v) => !v)}>
+              <SaveToCollectionButton key={pokemon.speciesId} speciesId={pokemon.speciesId} name={pokemon.displayName} />
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-expanded={correcting}
+                aria-controls="correction-form"
+                onClick={() => setCorrecting((v) => !v)}
+              >
                 Not right?
               </button>
             </div>
@@ -301,10 +330,16 @@ function CorrectionForm({ onPick }: { onPick: (p: Pokemon) => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Pokemon[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searched, setSearched] = useState("");
   const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The form opens on user request ("Not right?"), so move focus into it.
+  useEffect(() => inputRef.current?.focus(), []);
 
   function search(e: React.FormEvent) {
     e.preventDefault();
+    setSearched(query);
     startTransition(async () => {
       const res = await searchPokemonForCorrection(query);
       if ("error" in res) { setError(res.error); setResults(null); }
@@ -313,29 +348,35 @@ function CorrectionForm({ onPick }: { onPick: (p: Pokemon) => void }) {
   }
 
   return (
-    <div className="surface p-6">
+    <div id="correction-form" className="surface p-6">
       <h3 className="font-extrabold">Which Pokémon is it?</h3>
-      <form onSubmit={search} className="mt-3 flex gap-3">
+      <form onSubmit={search} role="search" aria-label="Correct the Pokémon" className="mt-3 flex flex-wrap gap-3">
         <input
+          ref={inputRef}
+          name="pokemon"
+          autoComplete="off"
+          enterKeyHint="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           maxLength={40}
           placeholder="Name or Pokédex number"
           aria-label="Pokémon name or Pokédex number"
-          className="min-h-11 flex-1 rounded-full border border-theme-ink/15 bg-white/80 px-5"
+          className="field min-w-[10rem] flex-1"
         />
         <button type="submit" className="btn-primary" disabled={pending || !query.trim()}>
           {pending ? "Searching…" : "Search"}
         </button>
       </form>
       {error && <p role="alert" className="mt-3 text-sm">{error}</p>}
-      {results && results.length === 0 && <p className="mt-3 text-sm text-ink-muted">No Pokémon found for “{query}”.</p>}
+      <p role="status" className={results ? "mt-3 text-sm text-ink-muted" : "sr-only"}>
+        {results ? (results.length === 0 ? `No Pokémon found for “${searched}”.` : `${results.length} Pokémon found. Choose one below.`) : ""}
+      </p>
       {results && results.length > 0 && (
-        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ul aria-label="Search results" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {results.map((p) => (
             <li key={p.name}>
               <button type="button" onClick={() => onPick(p)}
-                className="surface flex w-full flex-col items-center p-3 transition hover:-translate-y-0.5 hover:shadow-lift">
+                className="surface flex min-h-11 w-full flex-col items-center p-3 transition hover:-translate-y-0.5 hover:shadow-lift">
                 <span className="relative block aspect-square w-20">
                   <PokemonArtwork src={p.artworkUrl} alt="" sizes="80px" />
                 </span>

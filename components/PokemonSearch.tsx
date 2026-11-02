@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Announce } from "@/components/Announce";
 import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 
 const DEBOUNCE_MS = 350;
@@ -8,9 +9,8 @@ const DEBOUNCE_MS = 350;
 function SearchField({ pending, children }: { pending?: boolean; children: React.ReactNode }) {
   return (
     <div
-      role="search"
       aria-busy={pending}
-      className="surface relative mx-auto flex max-w-xl items-center gap-2 p-2 pl-5 focus-within:ring-4 focus-within:ring-theme-accent/60"
+      className="surface relative mx-auto flex max-w-xl flex-wrap items-center gap-2 border-2 !border-theme-ink/70 p-2 pl-5 focus-within:ring-4 focus-within:ring-theme-ink"
     >
       {children}
     </div>
@@ -53,6 +53,8 @@ function SearchInput() {
 
   return (
     <form
+      role="search"
+      aria-label="Pokémon"
       onSubmit={(e) => {
         e.preventDefault();
         go(value);
@@ -74,8 +76,9 @@ function SearchInput() {
           placeholder="Try “pikachu”, “eevee” or 25"
           autoComplete="off"
           enterKeyHint="search"
-          className="min-w-0 flex-1 bg-transparent py-2 text-base font-semibold text-theme-ink outline-none placeholder:font-medium placeholder:text-ink-muted/70"
+          className="min-w-[8rem] flex-1 bg-transparent py-2 text-base font-semibold text-theme-ink outline-none placeholder:font-medium placeholder:text-ink-muted"
         />
+        {isPending && <Announce message="Searching…" />}
         {isPending && (
           <span
             aria-hidden
@@ -85,7 +88,8 @@ function SearchInput() {
         {value && (
           <button
             type="button"
-            className="btn-secondary !min-h-10 !px-4"
+            className="btn-secondary !px-4"
+            aria-label="Clear search"
             onClick={() => {
               setValue("");
               go("");
@@ -94,7 +98,7 @@ function SearchInput() {
             Clear
           </button>
         )}
-        <button type="submit" className="btn-primary !min-h-10">
+        <button type="submit" className="btn-primary">
           Search
         </button>
       </SearchField>
@@ -113,7 +117,7 @@ export function PokemonSearch() {
       fallback={
         <SearchField>
           <span aria-hidden>🔎</span>
-          <span className="flex-1 py-2 font-medium text-ink-muted/70">Loading search…</span>
+          <span className="flex-1 py-2 font-medium text-ink-muted">Loading search…</span>
         </SearchField>
       }
     >

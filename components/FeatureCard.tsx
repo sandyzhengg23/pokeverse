@@ -7,10 +7,11 @@ interface FeatureCardProps {
   icon: string;
   /** Tailwind background class for the icon bubble, e.g. "bg-mint". */
   tint: string;
-  comingSoon?: boolean;
+  /** Link label for live features. */
+  cta?: string;
 }
 
-export function FeatureCard({ href, title, description, icon, tint, comingSoon }: FeatureCardProps) {
+export function FeatureCard({ href, title, description, icon, tint, cta = "Start exploring" }: FeatureCardProps) {
   return (
     <Link
       href={href}
@@ -24,15 +25,10 @@ export function FeatureCard({ href, title, description, icon, tint, comingSoon }
       </span>
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-extrabold">{title}</h3>
-        {comingSoon && (
-          <span className="rounded-full bg-butter px-2.5 py-0.5 text-[11px] font-extrabold text-[#5e4a00]">
-            Coming soon
-          </span>
-        )}
       </div>
       <p className="text-ink-muted">{description}</p>
       <span className="mt-auto pt-2 text-sm font-bold underline-offset-4 group-hover:underline">
-        {comingSoon ? "Peek at the plan" : "Start exploring"} →
+        {cta} <span aria-hidden>→</span>
       </span>
     </Link>
   );

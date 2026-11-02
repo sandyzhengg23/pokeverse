@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { AnimeEpisodeCard } from "@/components/AnimeEpisodeCard";
+import { useEffect, useId, useRef, useState } from "react";
+import { AnimeEpisodeCard, NUMBERING_NOTE } from "@/components/AnimeEpisodeCard";
 import { PokemonArtwork } from "@/components/PokemonArtwork";
 import { SPOILER_LEVELS } from "@/components/StoryExplorer";
 import { StateMessage } from "@/components/StateMessage";
@@ -52,7 +52,10 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
 
   useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => {
-    if (phase === "done" || phase === "error") resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (phase === "done" || phase === "error") {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      resultRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
   }, [phase]);
 
   const first = pokemon.find((p) => p.id === selected[0]);
@@ -87,6 +90,16 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
   }
 
   const loading = phase === "loading";
+  const atMax = selected.length >= MAX_SELECTED;
+
+  // One persistent live region announces loading and success. (A region that is
+  // inserted together with its text is often not announced, so this one is always mounted.)
+  const announcement =
+    phase === "loading"
+      ? "Muse Spark is planning your journey. This can take up to a minute."
+      : phase === "done" && plan
+        ? `Your journey is ready: ${plan.title}. ${plan.steps.length} episode${plan.steps.length === 1 ? "" : "s"}, listed below.`
+        : ""; // Errors are announced by the role="alert" panel, so they are not repeated here.
 
   return (
     <section className="mx-auto max-w-4xl px-5 py-12 sm:py-16">
@@ -102,10 +115,11 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
       <div className="surface mt-8 space-y-8 p-6 sm:p-8">
         <fieldset>
           <legend className="text-xl font-black">1. Choose your Pokémon</legend>
-          <p className="mb-4 mt-1 text-sm text-ink-muted" aria-live="polite">
+          <p className="mb-4 mt-1 text-sm text-ink-muted">
             Pokémon with verified anime episodes.{" "}
-            <span className="whitespace-nowrap font-bold">
+            <span role="status" className="whitespace-nowrap font-bold">
               {selected.length} selected · Maximum {MAX_SELECTED}
+              {atMax && <span className="sr-only">. Maximum reached; deselect one to choose another.</span>}
             </span>
           </p>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -117,16 +131,21 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
                   <button
                     type="button"
                     aria-pressed={isSelected}
-                    disabled={full || loading}
-                    onClick={() => setSelected((s) => toggle(s, p.id))}
+                    aria-disabled={full || undefined}
+                    disabled={loading}
+                    onClick={() => {
+                      if (!full) setSelected((s) => toggle(s, p.id));
+                    }}
                     style={typeThemeVars(p.types[0])}
-                    className={`relative flex w-full flex-col items-center rounded-3xl border-2 p-3 text-theme-ink transition duration-200 disabled:cursor-not-allowed ${
+                    className={`relative flex min-h-11 w-full flex-col items-center rounded-3xl border-2 p-3 text-theme-ink transition duration-200 disabled:cursor-not-allowed aria-disabled:cursor-not-allowed ${
                       isSelected
-                        ? "-translate-y-1 border-theme-ink bg-theme-soft shadow-lift ring-4 ring-theme-accent"
-                        : "border-dashed border-theme-ink/20 bg-white/50 opacity-70 hover:-translate-y-0.5 hover:opacity-100 disabled:opacity-40"
+                        ? "-translate-y-1 border-solid border-theme-ink bg-theme-soft shadow-lift ring-4 ring-theme-accent"
+                        : "border-dashed border-theme-ink/70 bg-white/60 hover:-translate-y-0.5 hover:bg-white/90 disabled:opacity-60 aria-disabled:opacity-60"
                     }`}
                   >
+                    {/* State is exposed by aria-pressed; this badge is the visual (non-color) cue only. */}
                     <span
+                      aria-hidden
                       className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-extrabold ${
                         isSelected ? "bg-theme-ink text-white" : "bg-white/80 text-ink-muted"
                       }`}
@@ -147,14 +166,15 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
         <ChipGroup legend="2. Viewing time" hint="Estimated at about 25 minutes per episode. Real runtimes aren’t verified.">
           {JOURNEY_BUDGETS.map((b) => (
             <Chip key={b} type="radio" name="budget" checked={budget === b} disabled={loading} onChange={() => setBudget(b)}>
-              {BUDGET_LABEL[b]} <span className="font-medium opacity-80">({BUDGET_HINT[b]})</span>
+              {BUDGET_LABEL[b]} <span className="font-medium">({BUDGET_HINT[b]})</span>
             </Chip>
           ))}
         </ChipGroup>
 
         <ChipGroup
           legend="3. Spoiler preference"
-          hint={SPOILER_LEVELS.find((l) => l.value === spoiler)?.hint}
+          live
+          hint={`Current setting: ${SPOILER_LEVELS.find((l) => l.value === spoiler)?.label}. ${SPOILER_LEVELS.find((l) => l.value === spoiler)?.hint}`}
         >
           {SPOILER_LEVELS.map((l) => (
             <Chip key={l.value} type="radio" name="spoiler" checked={spoiler === l.value} disabled={loading} onChange={() => setSpoiler(l.value)}>
@@ -172,17 +192,34 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
         </ChipGroup>
 
         <div className="text-center">
-          <button type="button" className="btn-primary !px-8" disabled={selected.length === 0 || loading} onClick={() => void generate()}>
-            {loading ? "Planning…" : "✨ Generate My Journey"}
+          {/* aria-disabled keeps keyboard focus on the button while planning runs. */}
+          <button
+            type="button"
+            className="btn-primary !px-8"
+            aria-disabled={selected.length === 0 || loading}
+            aria-describedby={selected.length === 0 ? "generate-hint" : undefined}
+            onClick={() => {
+              if (selected.length > 0 && !loading) void generate();
+            }}
+          >
+            {loading ? "Planning…" : <><span aria-hidden>✨</span> Generate My Journey</>}
           </button>
-          {selected.length === 0 && <p className="mt-2 text-sm text-ink-muted">Select at least one Pokémon to begin.</p>}
+          {selected.length === 0 && (
+            <p id="generate-hint" className="mt-2 text-sm text-ink-muted">
+              Select at least one Pokémon to begin.
+            </p>
+          )}
         </div>
       </div>
 
-      <div ref={resultRef} className="mt-10 scroll-mt-24">
+      <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </p>
+
+      <div ref={resultRef} className="mt-10 scroll-mt-24" aria-busy={loading}>
         {loading && (
-          <div role="status" className="surface flex flex-col items-center gap-4 px-6 py-12 text-center">
-            <span className="size-10 animate-spin rounded-full border-4 border-theme-accent border-t-theme-ink" />
+          <div className="surface flex flex-col items-center gap-4 px-6 py-12 text-center">
+            <span aria-hidden className="size-10 animate-spin rounded-full border-4 border-theme-accent border-t-theme-ink" />
             <p className="font-bold">Muse Spark is planning your journey…</p>
             <p className="text-sm text-ink-muted">Choosing episodes from our verified collection. This can take up to a minute.</p>
           </div>
@@ -202,12 +239,28 @@ export function JourneyBuilder({ pokemon, initialSelected }: { pokemon: JourneyP
   );
 }
 
-function ChipGroup({ legend, hint, children }: { legend: string; hint?: string; children: React.ReactNode }) {
+function ChipGroup({
+  legend,
+  hint,
+  live,
+  children,
+}: {
+  legend: string;
+  hint?: string;
+  /** Announce hint changes (used for the spoiler preference). */
+  live?: boolean;
+  children: React.ReactNode;
+}) {
+  const hintId = useId();
   return (
-    <fieldset>
+    <fieldset aria-describedby={hint ? hintId : undefined}>
       <legend className="text-xl font-black">{legend}</legend>
       <div className="mt-3 flex flex-wrap gap-2">{children}</div>
-      {hint && <p className="mt-2 text-sm text-ink-muted">{hint}</p>}
+      {hint && (
+        <p id={hintId} aria-live={live ? "polite" : undefined} className="mt-2 text-sm text-ink-muted">
+          {hint}
+        </p>
+      )}
     </fieldset>
   );
 }
@@ -229,12 +282,13 @@ function Chip({
 }) {
   return (
     <label
-      className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 ${
-        checked ? "border-theme-ink bg-theme-ink text-white" : "border-theme-ink/15 bg-white/80 hover:bg-white"
+      className={`chip inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 ${
+        checked ? "border-theme-ink bg-theme-ink text-white" : "border-theme-ink/40 bg-white/80 hover:bg-white"
       }`}
     >
       <input type={type} name={name} checked={checked} disabled={disabled} onChange={onChange} className="sr-only" />
-      {children}
+      {checked && <span aria-hidden>✓</span>}
+      <span>{children}</span>
     </label>
   );
 }
@@ -260,12 +314,13 @@ function JourneyResult({ plan, pokemon }: { plan: JourneyPlan; pokemon: JourneyP
           <span className="rounded-full bg-white/80 px-3 py-1">Planned by Muse Spark</span>
         </div>
         <p className="mt-3 text-xs text-ink-muted">{plan.estimate.note}</p>
+        <p className="mt-1 text-xs text-ink-muted">{NUMBERING_NOTE}</p>
       </header>
 
       {plan.notices.length > 0 && (
-        <ul className="space-y-2 rounded-3xl bg-butter/70 p-5 text-sm font-medium text-[#5e4a00]" role="status">
+        <ul aria-label="Notices" className="space-y-2 rounded-3xl bg-butter/70 p-5 text-sm font-medium text-[#5e4a00]">
           {plan.notices.map((n) => (
-            <li key={n}>ℹ️ {n}</li>
+            <li key={n}><span aria-hidden>ℹ️ </span>{n}</li>
           ))}
         </ul>
       )}
@@ -284,8 +339,8 @@ function JourneyResult({ plan, pokemon }: { plan: JourneyPlan; pokemon: JourneyP
 
       <div className="surface p-6 sm:p-8">
         {hiddenSpoilers > 0 && (
-          <p className="mb-6 rounded-2xl bg-theme-soft p-3 text-sm" role="status">
-            🔒 {hiddenSpoilers} episode{hiddenSpoilers === 1 ? " has" : "s have"} a hidden spoiler. To reveal
+          <p className="mb-6 rounded-2xl bg-theme-soft p-3 text-sm">
+            <span aria-hidden>🔒 </span>{hiddenSpoilers} episode{hiddenSpoilers === 1 ? " has" : "s have"} a hidden spoiler. To reveal
             {hiddenSpoilers === 1 ? " it" : " them"}, pick a higher spoiler preference above and generate again.
           </p>
         )}
@@ -300,7 +355,7 @@ function JourneyResult({ plan, pokemon }: { plan: JourneyPlan; pokemon: JourneyP
                     <Link
                       key={id}
                       href={`/pokemon/${pokemon.find((p) => p.id === id)?.slug ?? id}`}
-                      className="rounded-full bg-theme-soft px-3 py-1 text-xs font-extrabold hover:underline"
+                      className="inline-flex min-h-11 items-center rounded-full bg-theme-soft px-4 py-1 text-xs font-extrabold underline-offset-4 hover:underline"
                     >
                       {name(id)}
                     </Link>
@@ -310,11 +365,17 @@ function JourneyResult({ plan, pokemon }: { plan: JourneyPlan; pokemon: JourneyP
                   <p className="text-sm font-extrabold">
                     Why this episode{" "}
                     <span className="ml-1 rounded-full bg-theme-soft px-2 py-0.5 text-xs font-bold">
-                      {step.reasonSource === "ai" ? "✨ AI-written" : "From our verified dataset"}
+                      {step.reasonSource === "ai" ? <><span aria-hidden>✨ </span>AI-written</> : "From our verified dataset"}
                     </span>
                   </p>
                   <p className="mt-1">{step.reason}</p>
-                  {step.linkToPrevious && <p className="mt-2 text-sm text-ink-muted">🔗 {step.linkToPrevious}</p>}
+                  {step.linkToPrevious && (
+                    <p className="mt-2 text-sm text-ink-muted">
+                      <span aria-hidden>🔗 </span>
+                      <span className="sr-only">Connection to the previous episode: </span>
+                      {step.linkToPrevious}
+                    </p>
+                  )}
                 </div>
                 <AnimeEpisodeCard episode={step.episode} allowed={plan.request.maxSpoilerLevel} />
               </div>

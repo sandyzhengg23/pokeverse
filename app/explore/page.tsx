@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Announce } from "@/components/Announce";
 import { PokemonCard } from "@/components/PokemonCard";
 import { PokemonGridSkeleton } from "@/components/PokemonCardSkeleton";
 import { PokemonSearch } from "@/components/PokemonSearch";
@@ -63,6 +64,8 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
 
   if (matches.length === 0) {
     return (
+      <>
+      <Announce message={`No Pokémon found for “${q}”`} />
       <StateMessage
         tone="empty"
         title={`No Pokémon found for “${q}”`}
@@ -74,6 +77,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
       >
         Check the spelling, or try a name fragment or Pokédex number.
       </StateMessage>
+      </>
     );
   }
 
@@ -90,12 +94,17 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
     q !== "" && page === 1 && (matches.length === 1 || top.name === slug || String(top.id) === slug);
   const themed = isClearWinner ? pokemon.find((p) => p.name === top.name) : undefined;
 
+  const summary = q
+    ? `${matches.length} result${matches.length === 1 ? "" : "s"} for “${q}”`
+    : `${matches.length} Pokémon`;
+
   return (
     <>
       {themed && <TypeTheme type={themed.types[0]} />}
 
-      <p aria-live="polite" className="mb-5 text-center font-bold text-ink-muted">
-        {q ? `${matches.length} result${matches.length === 1 ? "" : "s"} for “${q}”` : "Kanto to Paldea and beyond"}
+      <Announce message={`${summary}${pageCount > 1 ? `, page ${page} of ${pageCount}` : ""}`} />
+      <p className="mb-5 text-center font-bold text-ink-muted">
+        {q ? summary : "Kanto to Paldea and beyond"}
         {pageCount > 1 && ` · page ${page} of ${pageCount}`}
       </p>
 
@@ -105,7 +114,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
         </p>
       )}
 
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <ul aria-label="Pokémon results" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {pokemon.map((p, i) => (
           <li key={p.id}>
             <PokemonCard pokemon={p} priority={i < 4} delay={i * 45} />
@@ -116,22 +125,22 @@ async function Results({ searchParams }: { searchParams: PageProps<"/explore">["
       {pageCount > 1 && (
         <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-3">
           {page > 1 ? (
-            <Link href={hrefFor(q, page - 1)} className="btn-secondary">
-              ← Previous
+            <Link href={hrefFor(q, page - 1)} className="btn-secondary" aria-label="Previous page">
+              <span aria-hidden>←</span> Previous
             </Link>
           ) : (
-            <span className="btn-secondary pointer-events-none opacity-40" aria-disabled>
-              ← Previous
-            </span>
+            <button type="button" disabled className="btn-secondary">
+              <span aria-hidden>←</span> Previous page
+            </button>
           )}
           {page < pageCount ? (
-            <Link href={hrefFor(q, page + 1)} className="btn-primary">
-              Next →
+            <Link href={hrefFor(q, page + 1)} className="btn-primary" aria-label="Next page">
+              Next <span aria-hidden>→</span>
             </Link>
           ) : (
-            <span className="btn-primary pointer-events-none opacity-40" aria-disabled>
-              Next →
-            </span>
+            <button type="button" disabled className="btn-primary">
+              Next page <span aria-hidden>→</span>
+            </button>
           )}
         </nav>
       )}

@@ -33,16 +33,16 @@ export function StoryExplorer({ pokemonId, pokemonSlug, displayName, featured, e
   return (
     <>
       <section className="surface p-6 sm:p-8">
-        <fieldset>
+        <fieldset aria-describedby="spoiler-status">
           <legend className="eyebrow mb-2">Spoiler setting</legend>
           <div className="flex flex-wrap gap-2">
             {SPOILER_LEVELS.map((level) => (
               <label
                 key={level.value}
-                className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 ${
+                className={`chip inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition ${
                   allowed === level.value
                     ? "border-theme-ink bg-theme-ink text-white"
-                    : "border-theme-ink/15 bg-white/80"
+                    : "border-theme-ink/40 bg-white/80"
                 }`}
               >
                 <input
@@ -53,11 +53,15 @@ export function StoryExplorer({ pokemonId, pokemonSlug, displayName, featured, e
                   onChange={() => setAllowed(level.value)}
                   className="sr-only"
                 />
+                {allowed === level.value && <span aria-hidden>✓</span>}
                 {level.label}
               </label>
             ))}
           </div>
-          <p className="mt-2 text-sm text-ink-muted" aria-live="polite">
+          <p id="spoiler-status" className="mt-2 text-sm text-ink-muted" aria-live="polite">
+            <span className="font-bold text-theme-ink">
+              Current setting: {SPOILER_LEVELS.find((l) => l.value === allowed)?.label}.
+            </span>{" "}
             {SPOILER_LEVELS.find((l) => l.value === allowed)?.hint}
             {hiddenCount > 0 && ` ${hiddenCount} spoiler${hiddenCount === 1 ? " is" : "s are"} hidden.`}
           </p>

@@ -28,7 +28,7 @@ export default function PokemonPage({ params }: PageProps<"/pokemon/[name]">) {
   // `params` is request-time data, so the profile streams in behind Suspense.
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 sm:py-14">
-      <Link href="/explore" className="btn-secondary mb-8 !min-h-10">
+      <Link href="/explore" className="btn-secondary mb-8">
         ← Back to Explore
       </Link>
       <Suspense fallback={<ProfileSkeleton />}>
@@ -80,7 +80,7 @@ async function Profile({ params }: { params: PageProps<"/pokemon/[name]">["param
             {formatPokemonId(pokemon.id)}
             {species?.genus && ` · ${species.genus}`}
           </p>
-          <h1 className="mt-1 text-5xl font-black leading-tight sm:text-6xl">{pokemon.displayName}</h1>
+          <h1 className="mt-1 text-4xl font-black leading-tight sm:text-5xl md:text-6xl">{pokemon.displayName}</h1>
           <div className="mt-4 flex flex-wrap gap-2">
             {pokemon.types.map((t) => (
               <PokemonTypeBadge key={t} type={t} />
@@ -116,7 +116,7 @@ async function Profile({ params }: { params: PageProps<"/pokemon/[name]">["param
                 {pokemon.abilities.map((a) => (
                   <span key={a.name} className="rounded-full bg-theme-soft px-3 py-1 text-sm font-bold">
                     {a.name}
-                    {a.isHidden && <span className="font-medium opacity-70"> (hidden)</span>}
+                    {a.isHidden && <span className="font-medium"> (hidden)</span>}
                   </span>
                 ))}
               </dd>
@@ -198,7 +198,7 @@ function StatBars({ stats }: { stats: Pokemon["stats"] }) {
   return (
     <dl className="space-y-3">
       {stats.map((s) => (
-        <div key={s.name} className="grid grid-cols-[6.5rem_2.5rem_1fr] items-center gap-3">
+        <div key={s.name} className="grid grid-cols-[minmax(5rem,7rem)_2.5rem_minmax(2rem,1fr)] items-center gap-3">
           <dt className="text-sm font-bold">{s.name}</dt>
           <dd className="text-sm font-extrabold tabular-nums">{s.value}</dd>
           <div aria-hidden className="h-2.5 overflow-hidden rounded-full bg-theme-soft">

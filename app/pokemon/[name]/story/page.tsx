@@ -52,13 +52,13 @@ async function Story({ params }: { params: PageProps<"/pokemon/[name]/story">["p
   return (
     <div className="space-y-10">
       <TypeTheme type={pokemon.types[0]} />
-      <Link href={`/pokemon/${pokemon.name}`} className="btn-secondary !min-h-10">
+      <Link href={`/pokemon/${pokemon.name}`} className="btn-secondary">
         ← {pokemon.displayName}’s profile
       </Link>
 
       <header className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
         <div className="relative aspect-square w-40 shrink-0 rounded-full bg-white/50 p-3 shadow-soft">
-          <PokemonArtwork src={pokemon.artworkUrl} alt={pokemon.displayName} sizes="160px" priority />
+          <PokemonArtwork src={pokemon.artworkUrl} alt={`Official artwork of ${pokemon.displayName}`} sizes="160px" priority />
         </div>
         <div>
           <p className="eyebrow">Anime story · {formatPokemonId(pokemon.id)}</p>

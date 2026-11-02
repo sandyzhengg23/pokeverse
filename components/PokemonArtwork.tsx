@@ -21,11 +21,13 @@ export function PokemonArtwork({ src, alt, sizes, priority, className = "" }: Po
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   if (!src || failedSrc === src) {
+    // alt="" means the artwork is decorative here (the Pokémon is named in adjacent text),
+    // so the placeholder is hidden from assistive tech too.
+    const decorative = alt === "";
     return (
       <div
-        role="img"
-        aria-label={`${alt} (artwork unavailable)`}
-        className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-full bg-white/50 text-theme-ink/70"
+        {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": `${alt} (artwork unavailable)` })}
+        className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-full bg-white/50 text-theme-ink"
       >
         <span aria-hidden className="text-3xl font-black">
           ?

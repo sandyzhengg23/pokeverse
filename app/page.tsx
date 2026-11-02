@@ -5,10 +5,10 @@ import { FeaturedPokemon } from "@/components/FeaturedPokemon";
 import { PokemonGridSkeleton } from "@/components/PokemonCardSkeleton";
 
 const STEPS = [
-  { title: "Scan your cards", body: "Upload one or many cards.", live: false },
-  { title: "Identify with AI", body: "Multimodal models recognize each Pokémon.", live: false },
-  { title: "Connect the stories", body: "Link to verified anime appearances.", live: false },
-  { title: "Follow a journey", body: "A spoiler-aware watch plan, made for you.", live: false },
+  { title: "Scan your card", body: "Take a photo or upload a picture of a Pokémon card." },
+  { title: "Identify with AI", body: "Muse Spark reads the card, and PokéAPI verifies the Pokémon." },
+  { title: "Connect the stories", body: "See verified, source-linked anime episodes for that Pokémon." },
+  { title: "Follow a journey", body: "Get a spoiler-aware watch plan, made for you." },
 ];
 
 export default function Home() {
@@ -34,16 +34,16 @@ export default function Home() {
           Every Card Has a <span className="rounded-3xl bg-lavender px-3">Story.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-muted sm:text-xl">
-          Discover the stories behind your Pokémon cards. Explore evolutions today, with anime
-          appearances and personalized adventures powered by AI on the way.
+          Scan a Pokémon card, find the anime episodes behind the Pokémon on it, and follow a
+          spoiler-aware viewing journey planned by AI.
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href="/explore" className="btn-primary px-8 py-3 text-base">
             Explore Pokémon
           </Link>
-          <a href="#roadmap" className="btn-secondary px-8 py-3 text-base">
-            See what’s coming
-          </a>
+          <Link href="/scan" className="btn-secondary px-8 py-3 text-base">
+            Scan a card
+          </Link>
         </div>
       </section>
 
@@ -88,7 +88,7 @@ export default function Home() {
               tint="bg-sky"
               title="Scan cards"
               description="Snap your trading cards and let AI recognize who’s inside."
-              comingSoon
+              cta="Scan a card"
             />
           </li>
           <li>
@@ -97,8 +97,8 @@ export default function Home() {
               icon="📒"
               tint="bg-blush"
               title="Collection"
-              description="Save your Pokémon and see how your characters connect."
-              comingSoon
+              description="Save the Pokémon you scan, then turn them into a story journey."
+              cta="Open your collection"
             />
           </li>
           <li>
@@ -107,17 +107,17 @@ export default function Home() {
               icon="🎬"
               tint="bg-butter"
               title="Journeys"
-              description="Spoiler-aware anime viewing paths built around your collection."
-              comingSoon
+              description="Spoiler-aware anime viewing paths built around the Pokémon you pick."
+              cta="Build a journey"
             />
           </li>
         </ul>
       </section>
 
-      {/* Roadmap */}
-      <section id="roadmap" aria-labelledby="roadmap-heading" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-14">
-        <p className="eyebrow">The plan</p>
-        <h2 id="roadmap-heading" className="mb-6 text-2xl font-black sm:text-3xl">
+      {/* How it works */}
+      <section id="how-it-works" aria-labelledby="how-it-works-heading" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-14">
+        <p className="eyebrow">How it works</p>
+        <h2 id="how-it-works-heading" className="mb-6 text-2xl font-black sm:text-3xl">
           From card to story
         </h2>
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -128,9 +128,6 @@ export default function Home() {
               </span>
               <h3 className="mt-3 font-extrabold">{step.title}</h3>
               <p className="mt-1 text-ink-muted">{step.body}</p>
-              <p className="mt-3 text-xs font-extrabold uppercase tracking-wider text-ink-muted">
-                {step.live ? "Live" : "Coming soon"}
-              </p>
             </li>
           ))}
         </ol>

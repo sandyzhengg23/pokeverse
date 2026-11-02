@@ -27,13 +27,14 @@ export function PokemonCard({ pokemon, priority, delay = 0 }: PokemonCardProps) 
       <div className="relative mx-auto aspect-square w-4/5 rounded-full bg-white/50 p-2 transition duration-300 group-hover:bg-white/70">
         <PokemonArtwork
           src={pokemon.artworkUrl}
-          alt={`Official artwork of ${pokemon.displayName}`}
+          // Decorative: the link's visible text already names the Pokémon.
+          alt=""
           sizes="(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw"
           priority={priority}
           className="p-2 group-hover:scale-110"
         />
       </div>
-      <p className="mt-4 text-xs font-extrabold tracking-wider opacity-70">
+      <p className="mt-4 text-xs font-extrabold tracking-wider">
         {formatPokemonId(pokemon.id)}
       </p>
       <h3 className="text-lg font-extrabold leading-tight">{pokemon.displayName}</h3>

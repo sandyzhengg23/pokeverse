@@ -43,7 +43,8 @@
   --shadow-soft: 0 8px 30px -12px rgb(63 51 88 / 0.22);
   --shadow-lift: 0 16px 40px -14px rgb(63 51 88 / 0.3);
 
-  --animate-float: float 7s ease-in-out infinite;
+  /* Limited to <5s total so it never counts as auto-playing moving content (WCAG 2.2.2). */
+  --animate-float: float 2.4s ease-in-out 2;
   --animate-pop-in: pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes float {
@@ -71,6 +72,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Long names/words must wrap instead of forcing horizontal scroll at 320px or large text sizes. */
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+}
+
 body {
   background-color: var(--theme-bg);
   color: var(--theme-ink);
@@ -88,7 +96,19 @@ body {
 :focus-visible {
   outline: 3px solid var(--theme-ink);
   outline-offset: 3px;
-  border-radius: 0.5rem;
+}
+
+/*
+ * Visually-hidden radio/checkbox inputs sit inside pill-shaped <label>s. The
+ * label draws the focus ring (in theme ink, never currentColor, which turns
+ * white on a selected chip and vanishes against the page).
+ */
+.chip:has(:focus-visible) {
+  outline: 3px solid var(--theme-ink);
+  outline-offset: 3px;
+}
+.chip:has(:focus-visible) > input {
+  outline: none;
 }
 
 @layer components {
@@ -97,10 +117,15 @@ body {
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-50 bg-theme-ink text-white shadow-soft hover:-translate-y-0.5 hover:shadow-lift;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 bg-theme-ink text-white shadow-soft hover:-translate-y-0.5 hover:shadow-lift;
   }
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-50 border border-theme-ink/15 bg-white/80 text-theme-ink hover:-translate-y-0.5 hover:bg-white;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 border border-theme-ink/40 bg-white/80 text-theme-ink hover:-translate-y-0.5 hover:bg-white;
+  }
+
+  /* Text inputs need a 3:1 boundary (WCAG 1.4.11). */
+  .field {
+    @apply min-h-11 min-w-0 rounded-full border-2 border-theme-ink/70 bg-white px-5 text-base text-theme-ink placeholder:text-ink-muted;
   }
 
   .eyebrow {
@@ -109,6 +134,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pop-in {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {

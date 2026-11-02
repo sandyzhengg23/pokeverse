@@ -41,7 +41,7 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
       <p className="eyebrow">
         {episode.series}
         {episode.episodeNumber !== null && (
-          <span title={NUMBERING_NOTE}> · Overall episode #{episode.episodeNumber} (Serebii)</span>
+          <span> · Overall episode #{episode.episodeNumber} (Serebii)</span>
         )}
       </p>
       <h3 className="mt-1 text-lg font-extrabold">{episode.title}</h3>
@@ -49,7 +49,14 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
         <span className="rounded-full bg-theme-soft px-3 py-1">{ROLE_LABEL[episode.role]}</span>
         <span className="rounded-full bg-theme-soft px-3 py-1">{SIGNIFICANCE_LABEL[episode.significance]}</span>
         <span className="rounded-full bg-white/80 px-3 py-1">
-          {hiddenOutcome ? `🔒 ${outcome.level === "major" ? "Major" : "Mild"} spoiler hidden` : SPOILER_LABEL[outcome?.level ?? "none"]}
+          {hiddenOutcome ? (
+            <>
+              <span aria-hidden>🔒 </span>
+              {outcome.level === "major" ? "Major" : "Mild"} spoiler hidden
+            </>
+          ) : (
+            SPOILER_LABEL[outcome?.level ?? "none"]
+          )}
         </span>
       </div>
 
@@ -76,7 +83,7 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
       )}
       {hiddenOutcome && (
         <p className="mt-3 text-sm text-ink-muted">
-          🔒 What happens to this Pokémon in this episode is hidden by your spoiler setting.
+          <span aria-hidden>🔒 </span>What happens to this Pokémon in this episode is hidden by your spoiler setting.
         </p>
       )}
 
@@ -89,6 +96,7 @@ export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpi
           className="font-bold underline underline-offset-4"
         >
           {episode.source.name}
+          <span className="sr-only"> (opens in a new tab)</span>
         </a>
       </p>
     </article>
