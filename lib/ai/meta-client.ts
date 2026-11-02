@@ -23,6 +23,12 @@ export class MetaAIError extends Error {
   }
 }
 
+/** True when the API key is present. Lets routes skip spending daily budget on a misconfigured server. */
+export function isMetaConfigured(): boolean {
+  return Boolean(process.env.MODEL_API_KEY);
+}
+
+// No automatic retries: one app-level quota unit must equal exactly one billed Meta request.
 let client: OpenAI | null = null;
 
 function getClient(): OpenAI {
@@ -30,7 +36,7 @@ function getClient(): OpenAI {
   if (!apiKey) {
     throw new MetaAIError("MODEL_API_KEY is not configured on the server.", 500, "missing_key");
   }
-  client ??= new OpenAI({ apiKey, baseURL: META_BASE_URL, timeout: TIMEOUT_MS, maxRetries: 1 });
+  client ??= new OpenAI({ apiKey, baseURL: META_BASE_URL, timeout: TIMEOUT_MS, maxRetries: 0 });
   return client;
 }
 

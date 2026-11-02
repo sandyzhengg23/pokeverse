@@ -1,7 +1,7 @@
 import { JourneyPlanError, parseJourneyRequest } from "@/lib/ai/journey";
 import { planJourney } from "@/lib/ai/journey-planner";
-import { MetaAIError } from "@/lib/ai/meta-client";
-import { limitAiRequest, tooManyRequests } from "@/lib/rate-limit";
+import { isMetaConfigured, MetaAIError } from "@/lib/ai/meta-client";
+import { blockedResponse, DAILY_LIMIT_MESSAGE, limitPerIp, reserveAiCall } from "@/lib/rate-limit";
 
 const MAX_BODY_BYTES = 2048;
 
@@ -10,9 +10,11 @@ export async function POST(request: Request) {
   const declared = Number(request.headers.get("content-length"));
   if (declared > MAX_BODY_BYTES) return fail("Request is too large.", 413);
 
-  // Rate-limit before any parsing or AI work.
-  const limit = await limitAiRequest(request, { name: "journey", max: 10, windowSeconds: 600 });
-  if (!limit.ok) return tooManyRequests(limit, "You’ve built a lot of journeys. Please wait a few minutes and try again.");
+  // Per-visitor limit before any parsing or AI work.
+  const perIp = await limitPerIp(request, { name: "journey", max: 10, windowSeconds: 600 });
+  if (!perIp.ok) {
+    return blockedResponse(perIp, { perIp: "You’ve built a lot of journeys. Please wait a few minutes and try again." });
+  }
 
   let body: unknown;
   try {
@@ -25,6 +27,12 @@ export async function POST(request: Request) {
 
   const parsed = parseJourneyRequest(body);
   if (!parsed.ok) return fail(parsed.error, 400);
+
+  if (!isMetaConfigured()) return fail("The journey planner isn't configured on the server.", 500);
+
+  // App-wide daily Meta budget, consumed only now that the request is valid and about to call Meta.
+  const daily = await reserveAiCall();
+  if (!daily.ok) return blockedResponse(daily, { daily: DAILY_LIMIT_MESSAGE });
 
   try {
     return Response.json(await planJourney(parsed.value));

@@ -1,7 +1,7 @@
 import { MAX_UPLOAD_BYTES, sniffImageType } from "@/lib/ai/card-scan";
 import { scanCard } from "@/lib/ai/card-scanner";
-import { MetaAIError } from "@/lib/ai/meta-client";
-import { limitAiRequest, tooManyRequests } from "@/lib/rate-limit";
+import { isMetaConfigured, MetaAIError } from "@/lib/ai/meta-client";
+import { blockedResponse, DAILY_LIMIT_MESSAGE, limitPerIp, reserveAiCall } from "@/lib/rate-limit";
 
 /**
  * POST /api/scan — multipart form with one `image` field.
@@ -14,9 +14,11 @@ export async function POST(request: Request) {
     return fail("That image is too large. Please use one under 5 MB.", 413);
   }
 
-  // Rate-limit before buffering or parsing the upload.
-  const limit = await limitAiRequest(request, { name: "scan", max: 10, windowSeconds: 600 });
-  if (!limit.ok) return tooManyRequests(limit, "You’ve scanned a lot of cards. Please wait a few minutes and try again.");
+  // Per-visitor limit before buffering or parsing the upload.
+  const perIp = await limitPerIp(request, { name: "scan", max: 10, windowSeconds: 600 });
+  if (!perIp.ok) {
+    return blockedResponse(perIp, { perIp: "You’ve scanned a lot of cards. Please wait a few minutes and try again." });
+  }
 
   let file: FormDataEntryValue | null;
   try {
@@ -30,6 +32,12 @@ export async function POST(request: Request) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const mimeType = sniffImageType(bytes);
   if (!mimeType) return fail("Unsupported file. Please upload a JPEG, PNG, WebP or GIF image.", 415);
+
+  if (!isMetaConfigured()) return fail("The scanner isn't configured on the server.", 500);
+
+  // App-wide daily Meta budget, consumed only now that the request is valid and about to call Meta.
+  const daily = await reserveAiCall();
+  if (!daily.ok) return blockedResponse(daily, { daily: DAILY_LIMIT_MESSAGE });
 
   try {
     return Response.json(await scanCard({ mimeType, bytes }));
