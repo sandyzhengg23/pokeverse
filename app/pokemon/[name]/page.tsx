@@ -2,13 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AnimeEpisodeCard } from "@/components/AnimeEpisodeCard";
+import { AnimeFeatured } from "@/components/AnimeFeatured";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { PokemonArtwork } from "@/components/PokemonArtwork";
 import { PokemonTypeBadge } from "@/components/PokemonTypeBadge";
 import { TypeTheme } from "@/components/TypeTheme";
-import { getAnimeAppearances } from "@/lib/anime/episodes";
-import { PLACEHOLDER_EPISODE } from "@/lib/anime/placeholder";
 import { formatPokemonId } from "@/lib/pokeapi/format";
 import { getEvolutionStages, getPokemon, getPokemonSpecies } from "@/lib/pokeapi/pokemon";
 import type { Pokemon } from "@/lib/pokeapi/types";
@@ -53,7 +51,6 @@ async function Profile({ params }: { params: PageProps<"/pokemon/[name]">["param
     species?.evolutionChainId != null
       ? await getEvolutionStages(species.evolutionChainId).catch(() => undefined)
       : null;
-  const appearances = await getAnimeAppearances(pokemon.name);
 
   const description = species?.description;
   const facts = [
@@ -140,27 +137,13 @@ async function Profile({ params }: { params: PageProps<"/pokemon/[name]">["param
       {/* Anime (curated dataset, NOT PokéAPI) */}
       <Section
         title="Anime appearances"
-        note="From PokéVerse’s own curated dataset. PokéAPI does not provide anime data."
+        note="From PokéVerse’s own curated, source-linked dataset. PokéAPI does not provide anime data."
       >
-        {appearances.length > 0 ? (
-          <ul className="grid gap-4 md:grid-cols-2">
-            {appearances.map((episode) => (
-              <li key={episode.id}>
-                <AnimeEpisodeCard episode={episode} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="space-y-4">
-            <p>
-              No verified episode appearances for {pokemon.displayName} yet. We only list episodes
-              we can cite, so nothing is guessed or auto-generated.
-            </p>
-            <div className="max-w-md">
-              <AnimeEpisodeCard episode={PLACEHOLDER_EPISODE} placeholder />
-            </div>
-          </div>
-        )}
+        <AnimeFeatured
+          pokemonId={pokemon.speciesId}
+          pokemonSlug={pokemon.name}
+          displayName={pokemon.displayName}
+        />
       </Section>
     </article>
   );

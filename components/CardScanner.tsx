@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { searchPokemonForCorrection } from "@/app/scan/actions";
+import { AnimeFeatured } from "@/components/AnimeFeatured";
 import { PokemonArtwork } from "@/components/PokemonArtwork";
 import { PokemonTypeBadge } from "@/components/PokemonTypeBadge";
 import { StateMessage } from "@/components/StateMessage";
@@ -253,6 +254,19 @@ function ResultPanel({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {pokemon && (
+        <div className="surface p-6">
+          <h3 className="text-xl font-black">{pokemon.displayName} in the anime</h3>
+          <p className="mb-4 mt-1 text-sm text-ink-muted">Verified episodes from our curated, source-linked dataset.</p>
+          <AnimeFeatured
+            pokemonId={pokemon.speciesId}
+            pokemonSlug={pokemon.name}
+            displayName={pokemon.displayName}
+            limit={2}
+          />
         </div>
       )}
 
