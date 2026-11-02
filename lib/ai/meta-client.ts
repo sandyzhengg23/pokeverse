@@ -40,14 +40,25 @@ export interface MetaTextResult {
   usage: { inputTokens: number; outputTokens: number } | null;
 }
 
-/** Send a plain text prompt to Muse Spark and return its text answer. */
-export async function generateText(prompt: string): Promise<MetaTextResult> {
+interface RequestOptions {
+  timeoutMs?: number;
+  maxOutputTokens?: number;
+}
+
+async function respond(
+  input: OpenAI.Responses.ResponseCreateParamsNonStreaming["input"],
+  { timeoutMs, maxOutputTokens }: RequestOptions = {},
+): Promise<MetaTextResult> {
   try {
-    const response = await getClient().responses.create({
-      model: MUSE_SPARK_MODEL,
-      input: prompt,
-      reasoning: { effort: "low" },
-    });
+    const response = await getClient().responses.create(
+      {
+        model: MUSE_SPARK_MODEL,
+        input,
+        reasoning: { effort: "low" },
+        ...(maxOutputTokens ? { max_output_tokens: maxOutputTokens } : {}),
+      },
+      timeoutMs ? { timeout: timeoutMs } : undefined,
+    );
     const text = response.output_text?.trim();
     if (!text) throw new MetaAIError("Model returned no text.", 502, "empty_response");
     return {
@@ -66,4 +77,35 @@ export async function generateText(prompt: string): Promise<MetaTextResult> {
     const status = err instanceof OpenAI.APIError && err.status ? err.status : 502;
     throw new MetaAIError(`Meta Model API request failed (status ${status}).`, 502, "api_error");
   }
+}
+
+/** Send a plain text prompt to Muse Spark and return its text answer. */
+export function generateText(prompt: string): Promise<MetaTextResult> {
+  return respond(prompt);
+}
+
+/**
+ * Send a prompt plus one image (as a base64 data URL, per Meta's
+ * image-understanding docs) to Muse Spark and return its text answer.
+ * The image is only held in memory for the duration of the request.
+ */
+export function generateTextFromImage(
+  prompt: string,
+  image: { mimeType: string; bytes: Uint8Array },
+  options?: RequestOptions,
+): Promise<MetaTextResult> {
+  const dataUrl = `data:${image.mimeType};base64,${Buffer.from(image.bytes).toString("base64")}`;
+  return respond(
+    [
+      {
+        type: "message",
+        role: "user",
+        content: [
+          { type: "input_text", text: prompt },
+          { type: "input_image", image_url: dataUrl, detail: "auto" },
+        ],
+      },
+    ],
+    options,
+  );
 }
