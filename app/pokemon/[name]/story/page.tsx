@@ -7,7 +7,7 @@ import { PokemonArtwork } from "@/components/PokemonArtwork";
 import { PokemonTypeBadge } from "@/components/PokemonTypeBadge";
 import { StoryExplorer } from "@/components/StoryExplorer";
 import { TypeTheme } from "@/components/TypeTheme";
-import { getAnimeAppearances, getRelatedPokemon, hasAnimeAppearances } from "@/lib/anime/queries";
+import { getAnimeAppearances, getFeaturedEpisodes, getRelatedPokemon, hasAnimeAppearances } from "@/lib/anime/queries";
 import { formatPokemonId } from "@/lib/pokeapi/format";
 import { getPokemon } from "@/lib/pokeapi/pokemon";
 
@@ -77,27 +77,13 @@ async function Story({ params }: { params: PageProps<"/pokemon/[name]/story">["p
         </section>
       ) : (
         <>
-          <section className="surface p-6 sm:p-8">
-            <h2 className="text-2xl font-black">Start here</h2>
-            <p className="mb-5 mt-1 text-sm text-ink-muted">
-              The episodes that matter most for {pokemon.displayName}, from PokéVerse’s curated dataset.
-            </p>
-            <AnimeFeatured
-              pokemonId={pokemon.speciesId}
-              pokemonSlug={pokemon.name}
-              displayName={pokemon.displayName}
-              showLink={false}
-            />
-          </section>
-
-          <section className="surface p-6 sm:p-8">
-            <h2 className="text-2xl font-black">Full story timeline</h2>
-            <p className="mb-6 mt-1 text-sm text-ink-muted">
-              {episodes.length} verified episode{episodes.length === 1 ? "" : "s"} in broadcast order. Every
-              card links to its source.
-            </p>
-            <StoryExplorer episodes={episodes} />
-          </section>
+          <StoryExplorer
+            pokemonId={pokemon.speciesId}
+            pokemonSlug={pokemon.name}
+            displayName={pokemon.displayName}
+            featured={getFeaturedEpisodes(pokemon.speciesId, 3)}
+            episodes={episodes}
+          />
 
           {relatedPokemon.length > 0 && (
             <section className="surface p-6 sm:p-8">

@@ -1,14 +1,20 @@
+import { isOutcomeVisible } from "@/lib/anime/queries";
 import type { AnimeEpisodeAppearance, Significance, SpoilerLevel } from "@/lib/anime/types";
 
 interface AnimeEpisodeCardProps {
   episode: AnimeEpisodeAppearance;
-  /** Hide the summary/why text (spoiler filter). Title and source stay visible. */
-  concealed?: boolean;
+  /**
+   * The viewer's spoiler setting. Required on purpose: every place that shows an
+   * episode must decide it, so the setting can't be silently skipped. Premise
+   * text is always shown; the `outcome` appears only if its level is allowed.
+   */
+  allowed: SpoilerLevel;
   /** Smaller card for previews (profile page, scan results). */
   compact?: boolean;
 }
 
 const ROLE_LABEL = { main: "Starring", supporting: "Supporting", cameo: "Cameo" } as const;
+/** Describes the outcome text of this episode for this Pokémon. */
 const SPOILER_LABEL: Record<SpoilerLevel, string> = {
   none: "Spoiler-free",
   mild: "Mild spoilers",
@@ -22,40 +28,54 @@ export const SIGNIFICANCE_LABEL: Record<Significance, string> = {
   notable_appearance: "Notable appearance",
 };
 
-export function AnimeEpisodeCard({ episode, concealed = false, compact = false }: AnimeEpisodeCardProps) {
+export const NUMBERING_NOTE =
+  "Episode numbers are Serebii’s overall numbering across the whole anime, not season numbers.";
+
+export function AnimeEpisodeCard({ episode, allowed, compact = false }: AnimeEpisodeCardProps) {
+  const { outcome } = episode;
+  const showOutcome = outcome !== undefined && isOutcomeVisible(outcome, allowed);
+  const hiddenOutcome = outcome !== undefined && !showOutcome;
+
   return (
     <article className="surface h-full p-5">
       <p className="eyebrow">
         {episode.series}
-        {episode.episodeNumber !== null && ` · Episode ${episode.episodeNumber}`}
+        {episode.episodeNumber !== null && (
+          <span title={NUMBERING_NOTE}> · Overall episode #{episode.episodeNumber} (Serebii)</span>
+        )}
       </p>
       <h3 className="mt-1 text-lg font-extrabold">{episode.title}</h3>
       <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
         <span className="rounded-full bg-theme-soft px-3 py-1">{ROLE_LABEL[episode.role]}</span>
         <span className="rounded-full bg-theme-soft px-3 py-1">{SIGNIFICANCE_LABEL[episode.significance]}</span>
-        <span className="rounded-full bg-white/80 px-3 py-1">{SPOILER_LABEL[episode.spoilerLevel]}</span>
+        <span className="rounded-full bg-white/80 px-3 py-1">{SPOILER_LABEL[outcome?.level ?? "none"]}</span>
       </div>
 
-      {concealed ? (
-        <p className="mt-3 text-ink-muted">
-          Details hidden to avoid spoilers. Raise the spoiler setting to read them.
-        </p>
-      ) : (
+      <p className="mt-3 font-bold">Why it matters</p>
+      <p className="text-ink-muted">{episode.why}</p>
+
+      {!compact && (
         <>
-          <p className="mt-3 font-bold">Why it matters</p>
-          <p className="text-ink-muted">{episode.why}</p>
-          {!compact && (
-            <>
-              <p className="mt-3 font-bold">What happens</p>
-              <p className="text-ink-muted">{episode.summary}</p>
-              {episode.characters.length > 0 && (
-                <p className="mt-3 text-sm">
-                  <span className="font-bold">Featuring:</span> {episode.characters.join(", ")}
-                </p>
-              )}
-            </>
+          <p className="mt-3 font-bold">What happens</p>
+          <p className="text-ink-muted">{episode.summary}</p>
+          {episode.characters.length > 0 && (
+            <p className="mt-3 text-sm">
+              <span className="font-bold">Featuring:</span> {episode.characters.join(", ")}
+            </p>
           )}
         </>
+      )}
+
+      {showOutcome && (
+        <div className="mt-3 rounded-2xl bg-theme-soft p-3">
+          <p className="text-sm font-bold">Spoiler</p>
+          <p className="text-sm">{outcome.text}</p>
+        </div>
+      )}
+      {hiddenOutcome && (
+        <p className="mt-3 text-sm text-ink-muted">
+          🔒 {outcome.level === "major" ? "A major" : "A mild"} spoiler is hidden. Change the spoiler setting on the story page to reveal it.
+        </p>
       )}
 
       <p className="mt-3 text-sm">

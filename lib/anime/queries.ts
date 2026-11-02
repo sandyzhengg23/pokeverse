@@ -30,6 +30,11 @@ export function isWithinSpoilerLevel(level: SpoilerLevel, allowed: SpoilerLevel)
   return SPOILER_RANK[level] <= SPOILER_RANK[allowed];
 }
 
+/** Whether an outcome (if any) may be shown at the viewer's spoiler setting. */
+export function isOutcomeVisible(outcome: { level: SpoilerLevel } | undefined, allowed: SpoilerLevel): boolean {
+  return !outcome || isWithinSpoilerLevel(outcome.level, allowed);
+}
+
 function byBroadcastOrder(a: AnimeEpisode, b: AnimeEpisode): number {
   return (a.episodeNumber ?? Infinity) - (b.episodeNumber ?? Infinity);
 }
